@@ -1,0 +1,33 @@
+# Runs the whole site: Nginx (website + reverse proxy) in front of the Node.js API.
+#   Local:   docker compose up --build        -> http://localhost:8080
+#   Server:  IMAGE_TAG=<commit> docker compose pull && docker compose up -d   (used by Ansible later)
+name: devops-website
+
+services:
+  web:
+    build:
+      context: ./app/website
+    image: ${REGISTRY:-ghcr.io/your-github-username}/devops-website-web:${IMAGE_TAG:-local}
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./app/api
+      args:
+        GIT_SHA: ${GIT_SHA:-local}
+        BUILD_TIME: ${BUILD_TIME:-}
+    image: ${REGISTRY:-ghcr.io/your-github-username}/devops-website-api:${IMAGE_TAG:-local}
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+    expose:
+      - "3000"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M

@@ -1,0 +1,32 @@
+# Managed by Ansible (deploy role). Changes here are overwritten on the next deploy.
+name: {{ app_name }}
+
+services:
+  web:
+    image: {{ registry }}/{{ app_name }}-web:{{ image_tag }}
+    ports:
+      - "80:80"
+{% if enable_tls | bool %}
+      - "443:443"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - {{ app_dir }}/nginx-tls.conf:/etc/nginx/conf.d/site.conf:ro
+{% endif %}
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  api:
+    image: {{ registry }}/{{ app_name }}-api:{{ image_tag }}
+    # The API reports this name as "Served by", so the load balancer test shows web-1 / web-2.
+    hostname: {{ inventory_hostname }}
+    environment:
+      APP_ENV: {{ app_env }}
+    expose:
+      - "3000"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M

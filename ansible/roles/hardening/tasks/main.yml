@@ -1,0 +1,63 @@
+---
+# ---- SSH: keys only, no root login ----
+- name: Lock down SSH
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/10-hardening.conf
+    content: |
+      # Managed by Ansible (hardening role)
+      PermitRootLogin no
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      X11Forwarding no
+      MaxAuthTries 3
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart SSH
+
+# ---- Firewall: deny everything except SSH, HTTP and HTTPS ----
+- name: Allow required ports through the firewall
+  community.general.ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop: "{{ firewall_allowed_ports }}"
+
+- name: Turn the firewall on, denying all other incoming traffic
+  community.general.ufw:
+    state: enabled
+    policy: deny
+    direction: incoming
+
+# ---- fail2ban: block IPs after repeated failed SSH logins ----
+- name: Configure fail2ban for SSH
+  ansible.builtin.copy:
+    dest: /etc/fail2ban/jail.local
+    content: |
+      # Managed by Ansible (hardening role)
+      [sshd]
+      enabled = true
+      maxretry = 5
+      findtime = 10m
+      bantime = 1h
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart fail2ban
+
+- name: Start fail2ban now and on every boot
+  ansible.builtin.service:
+    name: fail2ban
+    state: started
+    enabled: true
+
+# ---- Automatic security updates ----
+- name: Turn on automatic security updates
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+    owner: root
+    group: root
+    mode: "0644"

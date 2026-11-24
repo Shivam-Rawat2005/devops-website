@@ -1,0 +1,14 @@
+# Example only. The real hosts.yml is written by the pipeline from Terraform:
+#   terraform output -raw ansible_inventory > ../ansible/inventories/dev/hosts.yml
+all:
+  vars:
+    app_env: dev
+    aws_region: ap-south-1
+    target_group_arn: ""
+    site_url: "http://203.0.113.10"
+  children:
+    web:
+      hosts:
+        web-1:
+          ansible_host: 203.0.113.10
+          instance_id: i-0123456789abcdef0

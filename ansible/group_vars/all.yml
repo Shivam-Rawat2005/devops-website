@@ -1,0 +1,38 @@
+---
+# Settings shared by every server. Values here can be overridden with -e on the command line;
+# the pipeline passes image_tag, registry, ghcr_user and ghcr_token that way.
+
+app_name: devops-website
+app_dir: /opt/devops-website
+
+# Docker images: <registry>/devops-website-web:<image_tag> and .../devops-website-api:<image_tag>
+# The pipeline sets REGISTRY, IMAGE_TAG, GHCR_USER and GHCR_TOKEN as environment variables,
+# so secrets never appear on the command line.
+registry: "{{ lookup('env', 'REGISTRY') | default('ghcr.io/your-github-username', true) }}"
+image_tag: "{{ lookup('env', 'IMAGE_TAG') | default('latest', true) }}"
+
+# Credentials to pull private images from GitHub Container Registry.
+ghcr_user: "{{ lookup('env', 'GHCR_USER') }}"
+ghcr_token: "{{ lookup('env', 'GHCR_TOKEN') }}"
+
+# HTTPS with Let's Encrypt on the server itself. Used for a single server with a domain
+# pointing at its Elastic IP. With the load balancer, HTTPS is handled by AWS instead.
+enable_tls: false
+domain_name: ""
+letsencrypt_email: ""
+
+# Packages every server gets.
+base_packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - htop
+  - unattended-upgrades
+  - fail2ban
+  - ufw
+
+# Ports opened in the server firewall.
+firewall_allowed_ports:
+  - "22"
+  - "80"
+  - "443"

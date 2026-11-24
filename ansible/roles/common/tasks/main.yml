@@ -1,0 +1,22 @@
+---
+- name: Update the package list and apply safe upgrades
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+    upgrade: safe
+
+- name: Install base packages
+  ansible.builtin.apt:
+    name: "{{ base_packages }}"
+    state: present
+
+- name: Name the server after its inventory name (shown as "Served by" on the website)
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: Keep the hostname resolvable locally
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1\s'
+    line: "127.0.1.1 {{ inventory_hostname }}"
+    mode: "0644"

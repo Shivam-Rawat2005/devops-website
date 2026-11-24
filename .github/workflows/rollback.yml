@@ -1,0 +1,47 @@
+# Roll back to an earlier version: Actions tab -> Rollback -> Run workflow.
+# The old images are still in the registry, so nothing is rebuilt; the same
+# rolling deploy simply puts the older version back, one server at a time.
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to roll back"
+        required: true
+        type: choice
+        options: [dev, prod]
+      image_tag:
+        description: "7-character commit ID of the version to restore (from Recent deployments or the Actions history)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check the version format
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Version must be a 7-character commit ID
+        env:
+          TAG: ${{ inputs.image_tag }}
+        run: |
+          if [[ ! "$TAG" =~ ^[0-9a-f]{7}$ ]]; then
+            echo "::error::'$TAG' is not a 7-character commit ID, for example a3f9c21"
+            exit 1
+          fi
+
+  rollback:
+    name: Roll back
+    needs: check
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      environment: ${{ inputs.environment }}
+      image_tag: ${{ inputs.image_tag }}
+    secrets: inherit
+    permissions:
+      contents: read
+      id-token: write
+      packages: read

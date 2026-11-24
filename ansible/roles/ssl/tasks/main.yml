@@ -1,0 +1,32 @@
+---
+# Free HTTPS certificate from Let's Encrypt, for a single server whose domain points at its Elastic IP.
+# Certbot briefly stops the web container to answer Let's Encrypt's check on port 80,
+# then starts it again. Renewal runs automatically twice a day with the same hooks.
+
+- name: Check that the domain settings are filled in
+  ansible.builtin.assert:
+    that:
+      - domain_name | length > 0
+      - letsencrypt_email | length > 0
+    fail_msg: "Set domain_name and letsencrypt_email (in group_vars/all.yml or with -e) to enable HTTPS."
+
+- name: Install Certbot
+  ansible.builtin.apt:
+    name: certbot
+    state: present
+
+- name: Get the certificate (only the first time)
+  ansible.builtin.command: >-
+    certbot certonly --standalone --non-interactive --agree-tos
+    --email {{ letsencrypt_email }}
+    -d {{ domain_name }}
+    --pre-hook "docker stop {{ app_name }}-web-1 || true"
+    --post-hook "docker start {{ app_name }}-web-1 || true"
+  args:
+    creates: "/etc/letsencrypt/live/{{ domain_name }}/fullchain.pem"
+
+- name: Make sure automatic renewal is scheduled
+  ansible.builtin.service:
+    name: certbot.timer
+    state: started
+    enabled: true

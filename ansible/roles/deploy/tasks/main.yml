@@ -1,0 +1,84 @@
+---
+- name: Check an image tag was given
+  ansible.builtin.assert:
+    that:
+      - image_tag | length > 0
+      - image_tag != 'latest' or app_env == 'dev'
+    fail_msg: "Pass the version to deploy with -e image_tag=<commit>."
+
+- name: Create the application folder
+  ansible.builtin.file:
+    path: "{{ app_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Write the Docker Compose file for this server
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ app_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Write the HTTPS Nginx configuration
+  ansible.builtin.template:
+    src: nginx-tls.conf.j2
+    dest: "{{ app_dir }}/nginx-tls.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  when: enable_tls | bool
+
+- name: Log in to the container registry
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    echo "{{ ghcr_token }}" | docker login {{ registry.split('/')[0] }} -u "{{ ghcr_user }}" --password-stdin
+  args:
+    executable: /bin/bash
+  no_log: true
+  changed_when: false
+  when: ghcr_token | length > 0
+
+- name: Pull the new images
+  ansible.builtin.command: docker compose pull
+  args:
+    chdir: "{{ app_dir }}"
+  register: pull_result
+  changed_when: "'Pulled' in pull_result.stderr or 'Downloaded' in pull_result.stderr"
+
+- name: Start the containers with the new version
+  ansible.builtin.command: docker compose up -d --remove-orphans --wait --wait-timeout 120
+  args:
+    chdir: "{{ app_dir }}"
+  register: up_result
+  changed_when: "'Started' in up_result.stderr or 'Recreated' in up_result.stderr or 'Created' in up_result.stderr"
+
+- name: Log out of the container registry
+  ansible.builtin.command: docker logout {{ registry.split('/')[0] }}
+  changed_when: false
+  when: ghcr_token | length > 0
+
+- name: Check Nginx answers its health check
+  ansible.builtin.uri:
+    url: http://127.0.0.1/healthz
+    status_code: 200
+  register: nginx_health
+  retries: 12
+  delay: 5
+  until: nginx_health.status == 200
+
+- name: Check the API reports the version just deployed
+  ansible.builtin.uri:
+    url: http://127.0.0.1/api/version
+    return_content: true
+  register: api_version
+  retries: 12
+  delay: 5
+  until: api_version.status == 200 and api_version.json.commit == image_tag
+
+- name: Remove old, unused images to free disk space
+  ansible.builtin.command: docker image prune -af --filter "until=168h"
+  register: prune_result
+  changed_when: "'Total reclaimed space: 0B' not in prune_result.stdout"

@@ -1,0 +1,65 @@
+---
+# Rolling deploy of a new image version, one server at a time.
+#   ansible-playbook -i inventories/prod/hosts.yml deploy.yml -e image_tag=<commit>
+#
+# For each server, when a load balancer exists:
+#   1. take the server out of the load balancer and wait for open requests to finish
+#   2. pull the new images and restart the containers
+#   3. check the new version answers correctly
+#   4. put the server back and wait until the load balancer marks it healthy
+# If any step fails, Ansible stops and the remaining servers keep the old version.
+
+- name: Rolling deploy
+  hosts: web
+  become: true
+  serial: 1
+  max_fail_percentage: 0
+
+  pre_tasks:
+    - name: Take this server out of the load balancer
+      ansible.builtin.command: >-
+        aws elbv2 deregister-targets
+        --region {{ aws_region }}
+        --target-group-arn {{ target_group_arn }}
+        --targets Id={{ instance_id }}
+      delegate_to: localhost
+      become: false
+      changed_when: true
+      when: target_group_arn | length > 0
+
+    - name: Wait until the load balancer has drained this server
+      ansible.builtin.command: >-
+        aws elbv2 wait target-deregistered
+        --region {{ aws_region }}
+        --target-group-arn {{ target_group_arn }}
+        --targets Id={{ instance_id }}
+      delegate_to: localhost
+      become: false
+      changed_when: false
+      when: target_group_arn | length > 0
+
+  roles:
+    - role: deploy
+
+  post_tasks:
+    - name: Put this server back into the load balancer
+      ansible.builtin.command: >-
+        aws elbv2 register-targets
+        --region {{ aws_region }}
+        --target-group-arn {{ target_group_arn }}
+        --targets Id={{ instance_id }},Port=80
+      delegate_to: localhost
+      become: false
+      changed_when: true
+      when: target_group_arn | length > 0
+
+    - name: Wait until the load balancer marks this server healthy
+      ansible.builtin.command: >-
+        aws elbv2 wait target-in-service
+        --region {{ aws_region }}
+        --target-group-arn {{ target_group_arn }}
+        --targets Id={{ instance_id }},Port=80
+      delegate_to: localhost
+      become: false
+      changed_when: false
+      when: target_group_arn | length > 0

@@ -1,0 +1,146 @@
+# Reusable deploy job, called by deploy.yml (dev, then prod) and rollback.yml.
+# Steps: Terraform makes AWS match the code -> Ansible sets up the servers ->
+# Ansible rolls out the given image version one server at a time -> check the live site.
+name: Deploy (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "dev or prod"
+        required: true
+        type: string
+      image_tag:
+        description: "Image version to deploy (7-character commit ID)"
+        required: true
+        type: string
+    outputs:
+      site_url:
+        description: "Address of the deployed site"
+        value: ${{ jobs.deploy.outputs.site_url }}
+
+permissions:
+  contents: read
+  id-token: write
+  packages: read
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-24.04
+    # The "prod" environment has a required reviewer in GitHub, so this job waits for approval there.
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ steps.tf.outputs.site_url }}
+    concurrency:
+      group: deploy-${{ inputs.environment }}
+      cancel-in-progress: false
+    timeout-minutes: 40
+    outputs:
+      site_url: ${{ steps.tf.outputs.site_url }}
+    env:
+      ENVIRONMENT: ${{ inputs.environment }}
+      IMAGE_TAG: ${{ inputs.image_tag }}
+      AWS_REGION: ${{ vars.AWS_REGION || 'ap-south-1' }}
+      TF_IN_AUTOMATION: "true"
+      ANSIBLE_FORCE_COLOR: "1"
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Log in to AWS (OIDC, no stored keys)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10.5"
+          terraform_wrapper: false
+
+      - name: Terraform init
+        working-directory: terraform
+        env:
+          TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=${TF_STATE_BUCKET}" \
+            -backend-config="key=${ENVIRONMENT}/terraform.tfstate" \
+            -backend-config="region=${AWS_REGION}"
+
+      - name: Terraform apply (create or update AWS resources)
+        working-directory: terraform
+        env:
+          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
+          TF_VAR_aws_region: ${{ env.AWS_REGION }}
+          TF_VAR_certificate_arn: ${{ vars.CERTIFICATE_ARN || '' }}
+        run: terraform apply -input=false -auto-approve -var-file="envs/${ENVIRONMENT}.tfvars"
+
+      - name: Write the Ansible inventory from Terraform
+        id: tf
+        working-directory: terraform
+        run: |
+          terraform output -raw ansible_inventory > "../ansible/inventories/${ENVIRONMENT}/hosts.yml"
+          echo "site_url=$(terraform output -raw site_url)" >> "$GITHUB_OUTPUT"
+          cat "../ansible/inventories/${ENVIRONMENT}/hosts.yml"
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Ansible
+        run: |
+          pip install "ansible-core>=2.17,<2.18"
+          ansible-galaxy collection install -r ansible/requirements.yml
+
+      - name: Load the SSH key Ansible uses
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+      - name: Set up and secure the servers (site.yml)
+        working-directory: ansible
+        run: ansible-playbook -i "inventories/${ENVIRONMENT}/hosts.yml" site.yml
+
+      - name: Rolling deploy of version ${{ inputs.image_tag }} (deploy.yml)
+        working-directory: ansible
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          export REGISTRY="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}"
+          ansible-playbook -i "inventories/${ENVIRONMENT}/hosts.yml" deploy.yml
+
+      - name: Check the live site reports the new version
+        env:
+          SITE_URL: ${{ steps.tf.outputs.site_url }}
+        run: |
+          for attempt in $(seq 1 20); do
+            live=$(curl -fsS --max-time 5 "${SITE_URL}/api/version" | jq -r .commit || true)
+            echo "Attempt ${attempt}: live version is '${live}', expected '${IMAGE_TAG}'"
+            if [ "$live" = "$IMAGE_TAG" ]; then exit 0; fi
+            sleep 6
+          done
+          echo "::error::The live site did not report version ${IMAGE_TAG}"
+          exit 1
+
+      - name: Write the summary
+        if: always()
+        env:
+          SITE_URL: ${{ steps.tf.outputs.site_url }}
+        run: |
+          {
+            echo "### ${ENVIRONMENT}: version \`${IMAGE_TAG}\`"
+            echo ""
+            echo "Live at: ${SITE_URL}"
+          } >> "$GITHUB_STEP_SUMMARY"

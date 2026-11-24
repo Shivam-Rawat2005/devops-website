@@ -1,0 +1,22 @@
+---
+# Server setup: run on every deploy. It is idempotent, so on servers that are
+# already set up it checks everything and changes nothing.
+#   ansible-playbook -i inventories/dev/hosts.yml site.yml
+
+- name: Wait for new servers to accept SSH
+  hosts: web
+  gather_facts: false
+  tasks:
+    - name: Wait up to 5 minutes for SSH
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+
+- name: Set up and secure the web servers
+  hosts: web
+  become: true
+  roles:
+    - role: common
+    - role: hardening
+    - role: docker
+    - role: ssl
+      when: enable_tls | bool

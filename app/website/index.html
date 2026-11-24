@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aditya · DevOps Portfolio</title>
+  <meta name="description" content="DevOps portfolio of Aditya. This site is deployed automatically with Terraform, Ansible, Docker and GitHub Actions.">
+  <meta name="theme-color" content="#0f6e6a">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/bricolage-grotesque-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="#top" aria-label="Aditya, home">aditya<span>.dev</span></a>
+
+      <nav id="site-nav" class="nav" aria-label="Main">
+        <a href="#about">About</a>
+        <a href="#projects">Projects</a>
+        <a href="#architecture">How it's deployed</a>
+        <a href="#live">Live</a>
+        <a href="#contact">Contact</a>
+      </nav>
+
+      <div class="top-actions">
+        <a class="pill" href="#live" id="header-pill" aria-live="polite">
+          <span class="dot" data-state="checking"></span><span id="header-pill-text">Checking…</span>
+        </a>
+        <button class="icon-btn" id="theme-btn" type="button" aria-label="Switch to dark theme" title="Switch theme">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path class="sun" d="M12 4V2m0 20v-2m8-8h2M2 12h2m13.66-5.66 1.41-1.41M4.93 19.07l1.41-1.41m0-11.32L4.93 4.93m14.14 14.14-1.41-1.41M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z"/><path class="moon" d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>
+        </button>
+        <button class="icon-btn menu-btn" id="menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="site-nav">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- Hero -->
+    <section class="hero" id="top">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">DevOps engineer in training · India</p>
+          <h1>I automate how websites get built, tested and shipped.</h1>
+          <p class="lead">You are looking at the project itself. This site runs in Docker containers on AWS servers created by Terraform and set up by Ansible. Every push to GitHub deploys it automatically.</p>
+          <div class="cta">
+            <a class="btn" href="#architecture">See how it's deployed</a>
+            <a class="btn ghost" href="#live">Test it live</a>
+          </div>
+        </div>
+
+        <div class="term-card">
+          <div class="term-bar">
+            <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="term-title">~/devops-website</span>
+            <button class="link-btn" id="replay-btn" type="button">Replay</button>
+          </div>
+          <pre class="term" id="hero-term" aria-label="Example deployment in a terminal"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- About -->
+    <section class="band" id="about">
+      <div class="wrap about-grid">
+        <div class="about-copy">
+          <p class="eyebrow">About</p>
+          <h2>Hi, I'm Aditya.</h2>
+          <p>I'm a computer science student learning DevOps by building real things. I like turning slow, manual work into a pipeline that runs the same way every time.</p>
+          <p>This website is my main project: a site that deploys itself. Everything that runs it, from the servers to the firewall rules, is written as code in one repository.</p>
+
+          <h3 class="minor">Skills</h3>
+          <dl class="skills">
+            <div><dt>Cloud and infrastructure</dt><dd>AWS (EC2, S3, ALB) · Terraform</dd></div>
+            <div><dt>Configuration and containers</dt><dd>Ansible · Docker · Nginx</dd></div>
+            <div><dt>CI/CD and code</dt><dd>GitHub Actions · Git · Node.js · JavaScript</dd></div>
+            <div><dt>Systems</dt><dd>Linux · Bash · SSH · networking basics</dd></div>
+          </dl>
+        </div>
+
+        <div class="timeline-card">
+          <h3 class="minor">Learning path</h3>
+          <ol class="timeline">
+            <li><span class="when">2025</span><span class="what"><b>Linux, Git and Bash</b>Command line, SSH, shell scripts and version control.</span></li>
+            <li><span class="when">Jan 2026</span><span class="what"><b>Docker</b>Images, containers, Compose and Nginx as a reverse proxy.</span></li>
+            <li><span class="when">Apr 2026</span><span class="what"><b>AWS and Terraform</b>EC2, security groups and infrastructure written as code.</span></li>
+            <li><span class="when">Jul 2026</span><span class="what"><b>Ansible and GitHub Actions</b>Automated server setup and CI/CD pipelines.</span></li>
+            <li class="now"><span class="when">Now</span><span class="what"><b>This project</b>Putting it all together into one automated deployment.</span></li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- Projects -->
+    <section id="projects">
+      <div class="wrap">
+        <div class="sechead">
+          <p class="eyebrow">Work</p>
+          <h2>Projects</h2>
+          <p>Filter by tool, then open a project to see how it works.</p>
+        </div>
+
+        <div class="chips" role="group" aria-label="Filter projects by tool" id="filters">
+          <button class="chip" type="button" data-filter="all" aria-pressed="true">All</button>
+          <button class="chip" type="button" data-filter="terraform" aria-pressed="false">Terraform</button>
+          <button class="chip" type="button" data-filter="ansible" aria-pressed="false">Ansible</button>
+          <button class="chip" type="button" data-filter="docker" aria-pressed="false">Docker</button>
+          <button class="chip" type="button" data-filter="github-actions" aria-pressed="false">GitHub Actions</button>
+          <button class="chip" type="button" data-filter="nginx" aria-pressed="false">Nginx</button>
+        </div>
+
+        <div class="projects" id="project-list"></div>
+        <p class="muted" id="project-count" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <!-- Architecture -->
+    <section class="band" id="architecture">
+      <div class="wrap">
+        <div class="sechead">
+          <p class="eyebrow">How this site is deployed</p>
+          <h2>The whole system, from your laptop to the visitor</h2>
+          <p>Select any part to see what it does, when it runs and which files control it. Connected parts light up.</p>
+        </div>
+
+        <div class="arch">
+          <div class="arch-map" id="arch-map">
+            <div class="tier">
+              <span class="tier-label">Code</span>
+              <div class="tier-nodes">
+                <button class="node" type="button" data-node="developer">Developer<small>edits code</small></button>
+                <button class="node" type="button" data-node="github">GitHub repository<small>website, API, IaC</small></button>
+              </div>
+            </div>
+            <div class="flow" aria-hidden="true"><span>git push</span></div>
+            <div class="tier">
+              <span class="tier-label">Pipeline</span>
+              <div class="tier-nodes">
+                <button class="node key" type="button" data-node="actions">GitHub Actions<small>runs on every push</small></button>
+              </div>
+            </div>
+            <div class="flow" aria-hidden="true"><span>builds · provisions · deploys</span></div>
+            <div class="tier">
+              <span class="tier-label">Tools</span>
+              <div class="tier-nodes">
+                <button class="node" type="button" data-node="registry">Container registry<small>Docker images</small></button>
+                <button class="node" type="button" data-node="terraform">Terraform<small>creates AWS resources</small></button>
+                <button class="node" type="button" data-node="ansible">Ansible<small>configures servers</small></button>
+              </div>
+            </div>
+            <div class="flow" aria-hidden="true"><span>images · servers · config</span></div>
+            <div class="tier aws">
+              <span class="tier-label">AWS</span>
+              <div class="tier-nodes column">
+                <button class="node" type="button" data-node="lb">Load balancer<small>HTTPS, health checks</small></button>
+                <div class="tier-nodes">
+                  <button class="node" type="button" data-node="web1">web-1 (EC2)<small>Nginx · website · API</small></button>
+                  <button class="node" type="button" data-node="web2">web-2 (EC2)<small>Nginx · website · API</small></button>
+                </div>
+              </div>
+            </div>
+            <div class="flow up" aria-hidden="true"><span>HTTPS requests</span></div>
+            <div class="tier">
+              <span class="tier-label">Users</span>
+              <div class="tier-nodes">
+                <button class="node" type="button" data-node="visitors">Visitors<small>aditya.dev</small></button>
+              </div>
+            </div>
+          </div>
+
+          <aside class="arch-detail" id="arch-detail" aria-live="polite"></aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pipeline explorer -->
+    <section id="pipeline">
+      <div class="wrap">
+        <div class="sechead">
+          <p class="eyebrow">The pipeline</p>
+          <h2>From git push to live, in six stages</h2>
+          <p>Pick a stage to see what happens, which tool does it, and the file in the repository that controls it. Or press Play.</p>
+        </div>
+
+        <div class="pipe">
+          <ol class="stages" id="stages" role="tablist" aria-label="Pipeline stages"></ol>
+          <div class="stage-detail" id="stage-detail" role="tabpanel" tabindex="0"></div>
+        </div>
+        <div class="pipe-controls">
+          <button class="btn small" id="play-btn" type="button">Play</button>
+          <button class="btn small ghost" id="prev-btn" type="button" aria-label="Previous stage">Previous</button>
+          <button class="btn small ghost" id="next-btn" type="button" aria-label="Next stage">Next</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Live -->
+    <section class="band" id="live">
+      <div class="wrap">
+        <div class="sechead">
+          <p class="eyebrow">Live</p>
+          <h2>This page is talking to the servers right now</h2>
+          <p>These numbers come from <code>/api/health</code> and <code>/api/version</code>. “Served by” shows which server answered this request.</p>
+        </div>
+
+        <div class="tiles" aria-live="polite">
+          <div class="tile">
+            <span class="tile-label">Status</span>
+            <span class="tile-value"><span class="dot" id="st-dot" data-state="checking"></span><span id="st-status">Checking…</span></span>
+          </div>
+          <div class="tile">
+            <span class="tile-label">Served by</span>
+            <span class="tile-value mono" id="st-server">–</span>
+          </div>
+          <div class="tile">
+            <span class="tile-label">Version</span>
+            <span class="tile-value mono" id="st-commit">–</span>
+            <span class="tile-sub" id="st-build">Build time unknown</span>
+          </div>
+          <div class="tile">
+            <span class="tile-label">Environment</span>
+            <span class="tile-value" id="st-env">–</span>
+          </div>
+          <div class="tile">
+            <span class="tile-label">API uptime</span>
+            <span class="tile-value mono" id="st-uptime">–</span>
+          </div>
+        </div>
+
+        <div class="status-foot">
+          <button class="btn small" id="check-btn" type="button">Check again</button>
+          <span class="muted" id="st-checked">Not checked yet</span>
+        </div>
+
+        <div class="live-grid">
+          <div class="panel" id="lb-panel">
+            <div class="panel-head">
+              <h3>Load balancer test</h3>
+              <p class="muted">Sends 10 requests and counts which server answered each one. With two servers, both should get a share.</p>
+            </div>
+            <button class="btn small" id="lb-btn" type="button">Send 10 requests</button>
+            <div class="lb-progress" aria-hidden="true"><i id="lb-bar"></i></div>
+            <ul class="lb-results" id="lb-results" aria-live="polite"></ul>
+            <p class="muted" id="lb-summary">No test run yet.</p>
+          </div>
+
+          <div class="panel" id="deploys-panel">
+            <div class="panel-head">
+              <h3>Recent deployments</h3>
+              <p class="muted">Written by GitHub Actions into <code>deployments.json</code> on every build.</p>
+            </div>
+            <ol class="deploys" id="deploys"></ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quote -->
+    <section id="quote">
+      <div class="wrap">
+        <figure class="quote">
+          <blockquote id="quote-text">Loading a quote…</blockquote>
+          <figcaption><span id="quote-author"></span></figcaption>
+          <button class="btn small ghost" id="quote-btn" type="button">Another quote</button>
+        </figure>
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section class="band" id="contact">
+      <div class="wrap contact-grid">
+        <div class="sechead">
+          <p class="eyebrow">Contact</p>
+          <h2>Send me a message</h2>
+          <p>The form posts to <code>/api/contact</code>, which checks every field on the server as well as here.</p>
+        </div>
+
+        <form id="contact-form" class="form" novalidate>
+          <div class="field">
+            <label for="name">Name</label>
+            <input id="name" name="name" type="text" autocomplete="name" maxlength="80" required aria-describedby="name-err">
+            <p class="err" id="name-err"></p>
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" autocomplete="email" maxlength="120" required aria-describedby="email-err">
+            <p class="err" id="email-err"></p>
+          </div>
+          <div class="field">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" rows="5" maxlength="2000" required aria-describedby="message-err message-count"></textarea>
+            <div class="field-foot">
+              <p class="err" id="message-err"></p>
+              <span class="muted mono" id="message-count">0 / 2000</span>
+            </div>
+          </div>
+          <!-- Hidden from people; spam bots fill it in -->
+          <div class="hp" aria-hidden="true">
+            <label for="website">Website</label>
+            <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+          </div>
+          <button class="btn" id="send-btn" type="submit">Send message</button>
+          <p class="form-msg" id="form-msg" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-inner">
+      <span>© <span id="year">2026</span> Aditya · Built with Terraform, Ansible, Docker and GitHub Actions</span>
+      <span class="mono" id="foot-version">version –</span>
+      <a href="#top">Back to top</a>
+    </div>
+  </footer>
+
+  <dialog id="project-dialog" aria-labelledby="dlg-title">
+    <form method="dialog" class="dlg">
+      <div class="dlg-head">
+        <h3 id="dlg-title"></h3>
+        <button class="icon-btn" value="close" aria-label="Close">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <div id="dlg-body"></div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
