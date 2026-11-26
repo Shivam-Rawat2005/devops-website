@@ -81,7 +81,7 @@ const TERM_LINES = [
   ['out', '  ✓ docker images built and pushed'],
   ['out', '  ✓ terraform: infrastructure up to date'],
   ['out', '  ✓ ansible: web-1 updated, web-2 updated'],
-  ['ok', '✓ live at https://aditya.dev'],
+  ['ok', '✓ live at https://shivam.dev'],
 ];
 let termRun = 0;
 async function playTerminal() {
@@ -290,7 +290,7 @@ const STAGES = [
     title: 'Build images', tool: 'Docker',
     text: 'The website and API are packaged as Docker images tagged with the commit ID, then pushed to the GitHub container registry. The same image runs in dev and prod.',
     file: 'app/website/Dockerfile',
-    code: 'docker build -t ghcr.io/aditya/site:$GITHUB_SHA app/website\ndocker push ghcr.io/aditya/site:$GITHUB_SHA',
+    code: 'docker build -t ghcr.io/shivam-rawat2005/site:$GITHUB_SHA app/website\ndocker push ghcr.io/shivam-rawat2005/site:$GITHUB_SHA',
   },
   {
     title: 'Infrastructure', tool: 'Terraform',
@@ -308,7 +308,7 @@ const STAGES = [
     title: 'Live', tool: 'Health check',
     text: 'The pipeline calls /api/version on the live site and confirms it reports the new commit. The version shown in this page’s footer comes from the same endpoint.',
     file: '.github/workflows/deploy.yml',
-    code: 'curl -fsS https://aditya.dev/api/version \\\n  | grep "$GITHUB_SHA"',
+    code: 'curl -fsS https://shivam.dev/api/version \\\n  | grep "$GITHUB_SHA"',
   },
 ];
 
